@@ -8,4 +8,5 @@ and turnt into a systemtray widget logins finally save so ill be updating my you
 
 dependencies are qt6-base and qt6webengine
 
-![Screenshot_20250627_113546](https://github.com/user-attachments/assets/747ffb0b-6194-4e07-a23a-931afbdc5f73)
+![Screenshot_20250627_114328](https://github.com/user-attachments/assets/374ca599-8a57-45be-98f3-a3480a1d8c52)
+

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="youtube-icon.svg">images/youtube-icon.svg</file>
+    </qresource>
+</RCC>

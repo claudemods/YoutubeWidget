@@ -7,6 +7,9 @@
 #include <QMessageBox>
 #include <QIcon>
 #include <QCloseEvent>
+#include <QWebEnginePage>
+#include <QWebEngineFullScreenRequest>
+#include <QStandardPaths>
 
 class YouTubeWidget : public QWebEngineView {
     Q_OBJECT
@@ -14,38 +17,56 @@ public:
     YouTubeWidget(QWidget *parent = nullptr)
     : QWebEngineView(parent) {
         setWindowFlags(Qt::Window | Qt::WindowStaysOnTopHint);
-        setAttribute(Qt::WA_DeleteOnClose, false); // Changed to false to prevent deletion on close
+        setAttribute(Qt::WA_DeleteOnClose, false);
 
-        // Configure QWebEngineProfile
-        QWebEngineProfile *profile = this->page()->profile();
+        // Create dedicated profile with persistent storage
+        QWebEngineProfile* profile = new QWebEngineProfile("YouTubePersistentProfile", this);
+        QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        
+        // Configure persistent session storage (PROVEN WORKING METHOD)
         profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
-        profile->setHttpCacheType(QWebEngineProfile::MemoryHttpCache);
-        profile->setHttpCacheMaximumSize(50 * 1024 * 1024);
+        profile->setCachePath(dataPath + "/youtube_cache");
+        profile->setPersistentStoragePath(dataPath + "/youtube_storage");
+        profile->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
 
+        // Create page with our configured profile
+        QWebEnginePage* page = new QWebEnginePage(profile, this);
+        setPage(page);
+        
         // Configure QWebEngineSettings
-        QWebEngineSettings *settings = this->settings();
+        QWebEngineSettings *settings = page->settings();
         settings->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
         settings->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
         settings->setAttribute(QWebEngineSettings::ScrollAnimatorEnabled, false);
+        settings->setAttribute(QWebEngineSettings::FullScreenSupportEnabled, true);
+
+        // Fullscreen handling (working version from before)
+        connect(page, &QWebEnginePage::fullScreenRequested, [this](QWebEngineFullScreenRequest request) {
+            if (request.toggleOn()) {
+                this->showFullScreen();
+            } else {
+                this->showNormal();
+            }
+            request.accept();
+        });
 
         // Load YouTube
         load(QUrl("https://www.youtube.com/"));
-        resize(1280, 720); // Set a reasonable size for the window
+        resize(1280, 720);
     }
 
     void toggleVisibility() {
         if (isVisible()) {
-            hide(); // Hide the widget if it's currently visible
+            hide();
         } else {
-            showNormal(); // Show the widget in its normal state
-            raise();      // Bring the widget to the front
-            activateWindow(); // Activate the window
+            showNormal();
+            raise();
+            activateWindow();
         }
     }
 
 protected:
     void closeEvent(QCloseEvent *event) override {
-        // Override close event to hide instead of closing
         hide();
         event->ignore();
     }
@@ -56,10 +77,8 @@ class TrayIcon : public QSystemTrayIcon {
 public:
     TrayIcon(QObject *parent = nullptr)
     : QSystemTrayIcon(parent) {
-        // Set the tray icon (replace ":/images/youtube-icon.svg" with your actual icon path)
         setIcon(QIcon(":/images/youtube-icon.svg"));
 
-        // Create a context menu for the tray icon
         QMenu *menu = new QMenu();
         QAction *toggleAction = menu->addAction("Show/Hide");
         QAction *quitAction = menu->addAction("Quit");
@@ -68,10 +87,8 @@ public:
         connect(quitAction, &QAction::triggered, this, &TrayIcon::quitApplication);
         setContextMenu(menu);
 
-        // Initialize the YouTube widget
         youTubeWidget = new YouTubeWidget();
 
-        // Connect the tray icon's activation signal to toggle visibility
         connect(this, &QSystemTrayIcon::activated, this, &TrayIcon::onTrayIconActivated);
     }
 
@@ -91,8 +108,7 @@ private slots:
     }
 
     void quitApplication() {
-        // Properly clean up before quitting
-        youTubeWidget->close(); // This will now actually close the widget
+        youTubeWidget->close();
         QApplication::quit();
     }
 
@@ -105,13 +121,11 @@ int main(int argc, char *argv[]) {
     app.setApplicationName("claudemods YouTube Widget v1.0");
     app.setOrganizationName("KDE Plasma");
 
-    // Check if the system tray is available
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
         QMessageBox::critical(nullptr, "Error", "System tray not available.");
         return 1;
     }
 
-    // Create and show the tray icon
     TrayIcon trayIcon;
     trayIcon.show();
 

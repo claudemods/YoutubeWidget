@@ -1,5 +1,5 @@
 # YoutubeWidget
-C++ Qt6 Youtube Widget For Kde TaskBar
+C++ Qt6 Youtube Widget For Kde Systemtray
 
 
 forked from https://www.pling.com/p/2298904 

@@ -102,7 +102,7 @@ private:
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    app.setApplicationName("YouTube System Tray");
+    app.setApplicationName("claudemods YouTube Widget v1.0");
     app.setOrganizationName("KDE Plasma");
 
     // Check if the system tray is available
